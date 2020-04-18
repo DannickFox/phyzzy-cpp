@@ -1,4 +1,11 @@
 // example.cpp
+/**
+ * The example program sets a system of 2 masses
+ * and then simulates the movement. The magnitude
+ * of the distance between the first and second
+ * masses are printed into an output file named
+ * "magnitudes.txt"
+*/
 #include <iostream>
 #include <fstream>
 #include "Vect2D.h"
