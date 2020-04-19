@@ -28,6 +28,7 @@ public:
     Mass(double, Vect2D, Vect2D);
     void setPos(double, double);
     void setVel(double, double);
+    void setRad(double);
     Vect2D getPos(void);
     void applyForce(Vect2D, double);
 };
@@ -39,11 +40,15 @@ Mass::Mass(double mass, Vect2D position, Vect2D velocity)
 }
 void Mass::setPos(double posX, double posY)
 {
-    pos.setCoord(posX, posY);
+    pos.set(posX, posY);
 }
 void Mass::setVel(double velX, double velY)
 {
-    vel.setCoord(velX, velY);
+    vel.set(velX, velY);
+}
+void Mass::setRad(double radius)
+{
+    rad = radius;
 }
 Vect2D Mass::getPos(void)
 {
