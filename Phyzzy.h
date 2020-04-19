@@ -17,7 +17,7 @@ class Mass
 {
 private:
     double m;   // Mass
-    double rad = 0.5; // Radius.
+    double rad; // Radius.
     Vect2D pos; // Position vector.
     Vect2D vel; // Velocity vector.
 
@@ -26,34 +26,15 @@ private:
     friend class PhyzzyEnv;
 
 public:
-    Mass(double, Vect2D, Vect2D);
-    void setPos(double, double);
-    void setVel(double, double);
-    void setRad(double);
-    Vect2D getPos(void);
+    Mass(double, double, Vect2D, Vect2D);
     void applyForce(Vect2D, double);
 };
-Mass::Mass(double mass, Vect2D position, Vect2D velocity)
+Mass::Mass(double mass, double radius, Vect2D position, Vect2D velocity)
     : pos(position.x, position.y), vel(velocity.x, velocity.y)
 {
     if (mass < 0) mass = -mass; // Prevents negative mass.
     m = mass;
-}
-void Mass::setPos(double posX, double posY)
-{
-    pos.set(posX, posY);
-}
-void Mass::setVel(double velX, double velY)
-{
-    vel.set(velX, velY);
-}
-void Mass::setRad(double radius)
-{
     rad = radius;
-}
-Vect2D Mass::getPos(void)
-{
-    return pos;
 }
 void Mass::applyForce(Vect2D f, double delta)
 {
@@ -103,11 +84,11 @@ struct GraphNode
     Vect2D force = Vect2D(); // Force applied to current node.
     std::vector<int> adjNode; // Index of adjacent node.
     std::vector<int> edgSprg; // Index of spring that connects nodes.
-    GraphNode(std::string, double, Vect2D, Vect2D);
+    GraphNode(std::string, double, double, Vect2D, Vect2D);
     ~GraphNode(void);
 };
-GraphNode::GraphNode(std::string nodeID, double mass, Vect2D pos, Vect2D vel)
-    : m(mass, pos, vel)
+GraphNode::GraphNode(std::string nodeID, double mass, double rad, Vect2D pos, Vect2D vel)
+    : m(mass, rad, pos, vel)
 {
     id = nodeID;
 };
@@ -125,7 +106,7 @@ private:
     friend class PhyzzyEnv;
 public:
     ~PhyzzyModel(void);
-    int addMass(double, Vect2D, Vect2D);
+    int addMass(double, double, Vect2D, Vect2D);
     void addSpring(int, int, double, double, double);
     int locateMass(Vect2D, double);
     Vect2D getMassPos(int);
@@ -143,10 +124,10 @@ PhyzzyModel::~PhyzzyModel(void)
     springs.clear();
 }
 // Add a new mass to the graph. Returns the number of masses in mesh.
-int PhyzzyModel::addMass(double mass, Vect2D pos, Vect2D vel)
+int PhyzzyModel::addMass(double mass, double rad, Vect2D pos, Vect2D vel)
 {
     std::string nodeID = "m" + std::to_string(graph.size());
-    graph.push_back(GraphNode(nodeID, mass, pos, vel));
+    graph.push_back(GraphNode(nodeID, mass, rad, pos, vel));
     return graph.size();
 }
 // Connect 2 masses with a new spring.
