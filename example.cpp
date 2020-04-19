@@ -1,6 +1,6 @@
 // example.cpp
 /**
- * The example program sets a system of 2 masses
+ * The example program sets a system of 3 masses
  * and then simulates the movement. The magnitude
  * of the distance between the first and second
  * masses are printed into an output file named
