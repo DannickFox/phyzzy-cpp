@@ -295,7 +295,7 @@ void PhyzzyEnv::enactForces(PhyzzyModel& phz)
 {
     for(auto& gn : phz.graph)
     {
-        gn.force += g +  gn.m.vel * (-Cd);
+        gn.force += g + gn.m.vel * (-Cd);
     }
 }
 void PhyzzyEnv::addBoundary(EnvBoundary b)
