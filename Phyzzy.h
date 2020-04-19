@@ -2,7 +2,7 @@
  * PhyzzyModel.h
  * PhyzzyModel 2D spring-mass system library.
  * Inspired by Sodaplay's Sodaconstructor.
- * It's like Soda but it isn't. It's PhyzzyModel, like Soda,
+ * It's like Soda but it isn't. It's Phyzzy, like Soda,
  * but that's about it.
 */
 
