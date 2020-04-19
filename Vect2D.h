@@ -11,7 +11,8 @@ struct Vect2D
     double x, y;
     
     Vect2D(double, double);
-    void setCoord(double, double);
+    void   set(double, double);
+    void   clr(void);
 
     double dot(Vect2D);
     double crs(Vect2D);
@@ -20,7 +21,6 @@ struct Vect2D
     double ang(void);
     Vect2D unit(void);
     Vect2D prj(Vect2D);
-    void   clr(void);
     Vect2D prp(void);
 
     Vect2D operator + (const Vect2D&);  // Vector addition.
@@ -35,10 +35,10 @@ struct Vect2D
 // Class constructor.
 Vect2D::Vect2D(double coordX = 0, double coordY = 0)
 {
-    setCoord(coordX, coordY);
+    set(coordX, coordY);
 }
 // Vector coordinate setter.
-void Vect2D::setCoord(double coordX, double coordY)
+void Vect2D::set(double coordX, double coordY)
 {
     x = coordX;
     y = coordY;
