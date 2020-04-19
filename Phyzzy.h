@@ -278,14 +278,18 @@ private:
     
 public:
     PhyzzyEnv(Vect2D, double);
+    ~PhyzzyEnv(void);
     void addBoundary(EnvBoundary);
     void enactForces(PhyzzyModel&);
 };
-
 PhyzzyEnv::PhyzzyEnv(Vect2D gravity, double drag = 0)
 {
     g = gravity;
     Cd = drag;
+}
+PhyzzyEnv::~PhyzzyEnv(void)
+{
+    bounds.clear();
 }
 void PhyzzyEnv::enactForces(PhyzzyModel& phz)
 {
