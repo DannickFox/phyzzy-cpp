@@ -43,6 +43,12 @@ void Vect2D::set(double coordX, double coordY)
     x = coordX;
     y = coordY;
 }
+// Set vector to zero.
+void Vect2D::clr(void)
+{
+    x = 0;
+    y = 0;
+}
 // Scalar dot product.
 double Vect2D::dot(Vect2D A)
 {
@@ -77,12 +83,6 @@ Vect2D Vect2D::unit(void)
 Vect2D Vect2D::prj(Vect2D A)
 {
     return A * this->dot(A) / A.mag2();
-}
-// Set vector to zero.
-void Vect2D::clr(void)
-{
-    x = 0;
-    y = 0;
 }
 // Get a perpendicular unit vector of the current vector.
 Vect2D Vect2D::prp(void)
