@@ -23,6 +23,7 @@ private:
 
     friend class Spring;
     friend class PhyzzyModel;
+    friend class PhyzzyEnv;
 
 public:
     Mass(double, Vect2D, Vect2D);
@@ -121,6 +122,7 @@ class PhyzzyModel
 private:
     std::vector<GraphNode> graph; // Tracks masses and manages the graph.
     std::vector<Spring> springs; // Tracks the springs being used in the graph.
+    friend class PhyzzyEnv;
 public:
     ~PhyzzyModel(void);
     int addMass(double, Vect2D, Vect2D);
@@ -252,19 +254,27 @@ Vect2D& PhyzzyModel::operator [] (const int& i)
 class PhyzzyEnv
 {
 private:
-    Vect2D gravity;
-    double resist;
+    Vect2D g; // Environment gravity.
+    double Cd;  // Environment drag coefficient.
+    std::vector<Vect2D> boundaryPos; // Boundary center position.
+    std::vector<Vect2D> boundaryDir; // Boundary center direction. (should be a unit vector)
+    
 public:
-    PhyzzyEnv(Vect2D g, double B);
-    ~PhyzzyEnv();
+    PhyzzyEnv(Vect2D, double);
+    void enactForces(PhyzzyModel&);
 };
 
-PhyzzyEnv::PhyzzyEnv(Vect2D g, double B)
+PhyzzyEnv::PhyzzyEnv(Vect2D gravity, double drag = 0)
 {
+    g = gravity;
+    Cd = drag;
 }
-
-PhyzzyEnv::~PhyzzyEnv()
+void PhyzzyEnv::enactForces(PhyzzyModel& phz)
 {
+    for(auto& gn : phz.graph)
+    {
+        gn.force += g +  gn.m.vel * (-Cd);
+    }
 }
 
 #endif
