@@ -250,15 +250,15 @@ Vect2D& PhyzzyModel::operator [] (const int& i)
     return graph[i].m.pos;
 } 
 
-struct EnvBoundary
+struct EnvBound
 {
     Vect2D pos; // Boundary center position.
     Vect2D dir; // Boundary direction
     double ks, kd; // Static and dynamic friction coefficients.
     double refl; // Boundary reflection.
-    EnvBoundary(Vect2D, Vect2D, double, double, double);
+    EnvBound(Vect2D, Vect2D, double, double, double);
 };
-EnvBoundary::EnvBoundary(Vect2D position, Vect2D direction,
+EnvBound::EnvBound(Vect2D position, Vect2D direction,
     double k_static, double k_dyn, double reflect)
 {
     pos = position;
@@ -274,12 +274,12 @@ class PhyzzyEnv
 private:
     Vect2D g; // Environment gravity.
     double Cd;  // Environment drag coefficient.
-    std::vector<EnvBoundary> bounds;
+    std::vector<EnvBound> bounds;
     
 public:
     PhyzzyEnv(Vect2D, double);
     ~PhyzzyEnv(void);
-    void addBoundary(EnvBoundary);
+    void addBound(EnvBound);
     void enactForces(PhyzzyModel&);
 };
 PhyzzyEnv::PhyzzyEnv(Vect2D gravity, double drag = 0)
@@ -298,7 +298,7 @@ void PhyzzyEnv::enactForces(PhyzzyModel& phz)
         gn.force += g + gn.m.vel * (-Cd);
     }
 }
-void PhyzzyEnv::addBoundary(EnvBoundary b)
+void PhyzzyEnv::addBound(EnvBound b)
 {
     bounds.push_back(b);
 }
