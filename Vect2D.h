@@ -23,10 +23,14 @@ struct Vect2D
     Vect2D prj(Vect2D);
     Vect2D prp(void);
 
+    Vect2D tf(double, double, double, double);
+    void   tfm(double, double, double, double);
+
     Vect2D operator + (const Vect2D&);  // Vector addition.
     Vect2D operator - (const Vect2D&);  // Vector subtraction.
     Vect2D operator * (const double&);  // Vector multiplication with scalar value.
     Vect2D operator / (const double&);  // Vector division with scalar value.
+    Vect2D operator - (void);           // Unary negative.
     Vect2D operator += (const Vect2D&); // Mutable vector addition.
     Vect2D operator -= (const Vect2D&); // Mutable vector subtraction.
     Vect2D operator *= (const double&); // Mutable vector multiplication with scalar value.
@@ -90,6 +94,16 @@ Vect2D Vect2D::prp(void)
     Vect2D P(1, -x / y);
     return P.unit();
 }
+// Linear transformation on vector
+Vect2D Vect2D::tf(double a, double b, double c, double d)
+{
+    return Vect2D(a * x + b * y, c * x + d * y);
+}
+// Mutable linear transformation on vector
+void Vect2D::tfm(double a, double b, double c, double d)
+{
+    set(a * x + b * y, c * x + d * y);
+}
 // Operator overloads.
 // Vector addition.
 Vect2D Vect2D::operator + (const Vect2D& r)
@@ -110,6 +124,11 @@ Vect2D Vect2D::operator * (const double& r)
 Vect2D Vect2D::operator / (const double& r)
 {
     return Vect2D(this->x / r, this->y / r);
+}
+// Unary vector negative.
+Vect2D Vect2D::operator - (void)
+{
+    return Vect2D(-this->x, -this->y);
 }
 // Mutable vector addition.
 Vect2D Vect2D::operator += (const Vect2D& r)
