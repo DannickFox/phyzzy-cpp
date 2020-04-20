@@ -1,10 +1,8 @@
 // example.cpp
 /**
  * The example program sets a system of 4 masses
- * and then simulates the movement. The magnitude
- * of the distance between the first and second
- * masses are printed into an output file named
- * "magnitudes.txt"
+ * and then simulates the movement. The positions
+ * of the masses are printed to file "points.txt"
 */
 #include <iostream>
 #include <iomanip>
@@ -17,7 +15,7 @@ int main(void)
     // Define environment.
     Vect2D gravity(0, 9.81);
     Boundary ground(Vect2D(0, 5), Vect2D(1,0), 0.8, 0.6);
-    PhyzzyEnvironment env(gravity, 0);
+    PhyzzyEnvironment env(gravity, 0.01);
     env.addBoundary(ground);
 
     // Define model.
