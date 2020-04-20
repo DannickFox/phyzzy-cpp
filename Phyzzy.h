@@ -10,278 +10,274 @@
 #define PHYZZY_H
 
 #include <vector>
-#include <string>
 #include "Vect2D.h"
 
-class Mass
+struct Mass
 {
-private:
-    double m;   // Mass
-    double rad; // Radius.
-    Vect2D pos; // Position vector.
-    Vect2D vel; // Velocity vector.
+    double m;
+    double r;
+    Vect2D pos;
+    Vect2D vel;
 
-    friend class Spring;
-    friend class PhyzzyModel;
-    friend class PhyzzyEnv;
-
-public:
     Mass(double, double, Vect2D, Vect2D);
-    void applyForce(Vect2D, double);
+    Vect2D move(Vect2D, double);
+    Vect2D weight(Vect2D);
 };
 Mass::Mass(double mass, double radius, Vect2D position, Vect2D velocity)
     : pos(position.x, position.y), vel(velocity.x, velocity.y)
 {
-    if (mass < 0) mass = -mass; // Prevents negative mass.
     m = mass;
-    rad = radius;
+    r = radius;
 }
-void Mass::applyForce(Vect2D f, double delta)
+Vect2D Mass::move(Vect2D force, double delta)
 {
-    vel += (f * delta) / m;
+    vel += force * delta / m;
     pos += vel * delta;
+    return pos;
+}
+Vect2D Mass::weight(Vect2D gravity)
+{
+    return gravity * m;
 }
 
-class Spring
+struct Spring
 {
-private:
-    double stiff;
-    double damp;
-    double rest;
-    double width = 0.1;
+    double k;
+    double d;
+    double l;
+    double w;
 
-public:
-    Spring(double, double, double);
+    Spring(double, double, double, double);
     Vect2D forceHooke(Mass, Mass);
-    Vect2D forceDampen(Mass, Mass);
+    Vect2D forceDamp(Mass, Mass);
 };
-Spring::Spring(double stiffness, double dampening, double restlength)
+Spring::Spring(double stiffness = 0, double damping = 0, double restlength = 0, double width = 0)
 {
-    stiff = stiffness;
-    damp = dampening;
-    rest = restlength;
+    k = stiffness;
+    d = damping;
+    l = restlength;
+    w = width;
 }
-// Hooke's law for ideal springs. Output force is applied to A.
 Vect2D Spring::forceHooke(Mass A, Mass B)
 {
-    Vect2D segment = A.pos - B.pos;
-    return segment.unit() * stiff * (rest - segment.mag());
+    Vect2D AB = A.pos - B.pos;
+    return AB.unit() * k * (l - AB.mag());
 }
-// Fluid resistance for spring dampening. Output force is applied to A.
-Vect2D Spring::forceDampen(Mass A, Mass B)
+Vect2D Spring::forceDamp(Mass A, Mass B)
 {
-    Vect2D segment = A.pos - B.pos;
-    Vect2D relVel = A.vel - B.vel;
-    return relVel.prj(segment) * (-damp);
+    Vect2D AB = A.pos - B.pos;
+    Vect2D vAB = A.vel - B.vel;
+    return vAB.prj(AB) * -d;
 }
 
-// The graph wraps around Mass objects to manage graph such as connections and forces.
+struct GraphEdge
+{
+    Spring s;
+    GraphEdge(Spring, Mass*, Mass*);
+};
+GraphEdge::GraphEdge(Spring S, Mass* mA, Mass* mB) : s(S.k, S.d, S.l, S.w) {}
 struct GraphNode
 {
-    std::string id; // Node identifier
+    Mass m;
+    Vect2D F;
+    std::vector<GraphNode*> adjN;
+    std::vector<GraphEdge*> adjE;
     
-    Mass m; // Contains the mass to be used.
-    Vect2D force = Vect2D(); // Force applied to current node.
-    std::vector<int> adjNode; // Index of adjacent node.
-    std::vector<int> edgSprg; // Index of spring that connects nodes.
-    GraphNode(std::string, double, double, Vect2D, Vect2D);
-    ~GraphNode(void);
+    GraphNode(Mass);
+    int addAdjacent(GraphNode*, GraphEdge*);
 };
-GraphNode::GraphNode(std::string nodeID, double mass, double rad, Vect2D pos, Vect2D vel)
-    : m(mass, rad, pos, vel)
+GraphNode::GraphNode(Mass mass) : m(mass.m, mass.r, mass.pos, mass.vel)
 {
-    id = nodeID;
-};
-GraphNode::~GraphNode(void)
-{
-    adjNode.clear();
-    edgSprg.clear();
+    F.clr();
 }
+int GraphNode::addAdjacent(GraphNode* n, GraphEdge* e)
+{
+    adjN.push_back(n);
+    adjE.push_back(e);
+    return adjN.size();
+}
+
 
 class PhyzzyModel
 {
 private:
-    std::vector<GraphNode> graph; // Tracks masses and manages the graph.
-    std::vector<Spring> springs; // Tracks the springs being used in the graph.
-    friend class PhyzzyEnv;
+    std::vector<GraphNode*> nodes;
+    std::vector<GraphEdge*> edges;
+    friend class PhyzzyEnvironment;
 public:
     ~PhyzzyModel(void);
-    int addMass(double, double, Vect2D, Vect2D);
-    void addSpring(int, int, double, double, double);
-    int locateMass(Vect2D, double);
-    Vect2D getMassPos(int);
-    Vect2D getMassPos(std::string);
-    Vect2D getMassVel(int);
-    void resetForces(void);
-    void applySprings(void);
-    void updateFrame(double, int);
+    int addNode(Mass);
+    int addEdge(int, int, Spring);
+    int remNode(int);
+    int remEdge(int);
 
-    Vect2D& operator [] (const int&);
+    size_t totalNodes(void);
+    size_t totalEdges(void);
+    Vect2D centerCoord(void);
+
+    void applySprings(void);
+    void updateFrame(double, size_t);
+
+    Vect2D operator [] (const int&);
 };
 PhyzzyModel::~PhyzzyModel(void)
 {
-    graph.clear();
-    springs.clear();
+    for (auto& n : nodes)
+        delete n;
+    nodes.clear();
+    for (auto& e : edges)
+        delete e;
+    edges.clear();
 }
-// Add a new mass to the graph. Returns the number of masses in mesh.
-int PhyzzyModel::addMass(double mass, double rad, Vect2D pos, Vect2D vel)
+int PhyzzyModel::addNode(Mass m)
 {
-    std::string nodeID = "m" + std::to_string(graph.size());
-    graph.push_back(GraphNode(nodeID, mass, rad, pos, vel));
-    return graph.size();
+    nodes.push_back(new GraphNode(m));
+    return nodes.size();
 }
-// Connect 2 masses with a new spring.
-void PhyzzyModel::addSpring(int A, int B, double spr, double dmp, double rest)
+int PhyzzyModel::addEdge(int A, int B, Spring s)
 {
-    // Connect different masses within the graph only.
-    if (A != B && A >= 0 && B >= 0 && A < graph.size() && B < graph.size())
+    if (A != B && A < nodes.size() && B < nodes.size())
     {
-        springs.push_back(Spring(spr, dmp, rest));
-        // Connect A and B
-        graph[A].adjNode.push_back(B);
-        graph[B].adjNode.push_back(A);
-        // Define spring properties for connection.
-        graph[A].edgSprg.push_back(springs.size() - 1);
-        graph[B].edgSprg.push_back(springs.size() - 1);
+        GraphEdge* e = new GraphEdge(s, &nodes[A]->m, &nodes[B]->m);
+        edges.push_back(e);
+        nodes[A]->adjN.push_back(nodes[B]);
+        nodes[A]->adjE.push_back(e);
+        nodes[B]->adjN.push_back(nodes[A]);
+        nodes[B]->adjE.push_back(e);
     }
+    return edges.size();
 }
-// Returns mass nearest to given vector within a radius.
-int PhyzzyModel::locateMass(Vect2D point, double radius)
+int PhyzzyModel::remNode(int x)
 {
-    for (int i = 0; i < graph.size(); i++)
+    if (x < nodes.size())
     {
-        if ((point - graph[i].m.pos).mag() < radius)
+        int* indices = new int[nodes[x]->adjE.size()];
+        int j = 0;
+        // Find indices of each edge.
+        for (auto& e : nodes[x]->adjE)
         {
-            return i;
+            int i;
+            for (i = 0; i < edges.size(); i++)
+            {
+                if (edges[i] = e) break;
+            }
+            if (i < edges.size()) indices[j++] = i;
         }
+        for (int i = 0; i < j; i++) remEdge(indices[i]);
+        delete[] indices;
+        delete nodes[x];
+        nodes.erase(nodes.begin() + x);
     }
-    return -1;
+    return nodes.size();
 }
-// Returns the position of the current mass.
-Vect2D PhyzzyModel::getMassPos(int x)
+int PhyzzyModel::remEdge(int x)
 {
-    return graph[x].m.pos;
-}
-Vect2D PhyzzyModel::getMassPos(std::string x)
-{
-    Vect2D p;
-    
-    for (auto &gn : graph)
+    if (x >= 0 && x < edges.size() && edges.size() > 0);
     {
-        if (x.compare(gn.id) == 0)
+        // Disconnect nodes by finding and removing from vectors.
+        for (auto &n : nodes)
         {
-            p = gn.m.pos;
-            break;
+            int i;
+            for (i = 0; i < n->adjE.size(); i++)
+            {
+                if (n->adjE[i] == edges[x]) break;
+            }
+            if (i < n->adjE.size())
+            {
+                n->adjE.erase(n->adjE.begin() + i);
+                n->adjN.erase(n->adjN.begin() + i);
+            }
         }
+        delete edges[x];
+        edges.erase(edges.begin() + x);
     }
-    return p;
+    return edges.size();
 }
-// Returns the velocity of the given mass.
-Vect2D PhyzzyModel::getMassVel(int x)
+size_t PhyzzyModel::totalNodes(void)
 {
-    return graph[x].m.vel;
+    return nodes.size();
 }
-// Reset forces.
-void PhyzzyModel::resetForces()
+size_t PhyzzyModel::totalEdges(void)
 {
-    for (auto& gn : graph)
-    {
-        gn.force.clr();
-    }
+    return edges.size();
 }
-// Applies spring forces. Use before any other force application.
 void PhyzzyModel::applySprings(void)
 {
-    // Cycle through graph.
-    for (auto& gn : graph)
+    for (auto& n : nodes)
     {
-        gn.force.clr(); // Resets all previous forces.
-
-        // Cycle through adjacent nodes of current node.
-        for (int i = 0; i < gn.adjNode.size(); i++)
+        for (int i = 0; i < n->adjN.size(); i++)
         {
-            // Reference to mass in opposite node.
-            Mass& opposite = graph[gn.adjNode[i]].m;
-            // Reference to spring that connects mass.
-            Spring& couple = springs[gn.edgSprg[i]];
+            Spring& couple = n->adjE[i]->s;
+            Mass& opposite = n->adjN[i]->m;
 
-            // Apply springing hooke forces.
-            gn.force += couple.forceHooke(gn.m, opposite);
-            // Apply springing dampening forces.
-            gn.force += couple.forceDampen(gn.m, opposite);
+            n->F += couple.forceHooke(n->m, opposite);
+            n->F += couple.forceDamp(n->m, opposite);
         }
     }
 }
-// Integrates and updates masses.
-void PhyzzyModel::updateFrame(double delta, int steps)
+void PhyzzyModel::updateFrame(double delta, size_t steps = 1)
 {
     double dt = delta / steps;
-    for (auto& gn : graph)
+    for (auto& n : nodes)
     {
         for (int i = 0; i < steps; i++)
         {
-            gn.m.applyForce(gn.force, dt);
+            n->m.move(n->F, dt);
         }
+        n->F.clr(); // Clear forces for next cycle.
     }
 }
-
-// Returns position of given mass according to operator. For faster display.
-Vect2D& PhyzzyModel::operator [] (const int& i)
+Vect2D PhyzzyModel::operator [] (const int& i)
 {
-    return graph[i].m.pos;
-} 
-
-struct EnvBound
-{
-    Vect2D pos; // Boundary center position.
-    Vect2D dir; // Boundary direction
-    double ks, kd; // Static and dynamic friction coefficients.
-    double refl; // Boundary reflection.
-    EnvBound(Vect2D, Vect2D, double, double, double);
-};
-EnvBound::EnvBound(Vect2D position, Vect2D direction,
-    double k_static, double k_dyn, double reflect)
-{
-    pos = position;
-    dir = direction.unit();
-    ks = k_static;
-    kd = k_dyn;
-    refl = reflect;
+    return nodes[i]->m.pos;
 }
 
-// Environment for the model.
-class PhyzzyEnv
+struct Boundary
+{
+    Vect2D pos;
+    Vect2D dir;
+    double ks, kd; // Surface friction coefficientes.
+    Boundary(Vect2D, Vect2D, double, double); 
+};
+Boundary::Boundary(Vect2D position, Vect2D direction, double k_static, double k_dynamic)
+    : pos(position.x, position.y), dir(direction.unit().x, direction.unit().y)
+{
+    ks = k_static;
+    kd = k_dynamic;    
+};
+
+class PhyzzyEnvironment
 {
 private:
-    Vect2D g; // Environment gravity.
-    double Cd;  // Environment drag coefficient.
-    std::vector<EnvBound> bounds;
-    
+    Vect2D g; // Gravity.
+    double Cd; // Drag coefficient.
+    std::vector<Boundary> bounds; // Boundaries
 public:
-    PhyzzyEnv(Vect2D, double);
-    ~PhyzzyEnv(void);
-    void addBound(EnvBound);
+    PhyzzyEnvironment(Vect2D, double);
+    ~PhyzzyEnvironment(void);
+    int addBoundary(Boundary b);
     void enactForces(PhyzzyModel&);
 };
-PhyzzyEnv::PhyzzyEnv(Vect2D gravity, double drag = 0)
+PhyzzyEnvironment::PhyzzyEnvironment(Vect2D gravity, double drag)
+    : g(gravity.x, gravity.y)
 {
-    g = gravity;
     Cd = drag;
 }
-PhyzzyEnv::~PhyzzyEnv(void)
+PhyzzyEnvironment::~PhyzzyEnvironment(void)
 {
     bounds.clear();
 }
-void PhyzzyEnv::enactForces(PhyzzyModel& phz)
-{
-    for(auto& gn : phz.graph)
-    {
-        gn.force += g + gn.m.vel * (-Cd);
-    }
-}
-void PhyzzyEnv::addBound(EnvBound b)
+int PhyzzyEnvironment::addBoundary(Boundary b)
 {
     bounds.push_back(b);
+    return bounds.size();
+}
+void PhyzzyEnvironment::enactForces(PhyzzyModel& phz)
+{
+    for (auto& n : phz.nodes)
+    {
+        n->F += n->m.weight(g) + n->m.vel * -Cd;
+    }
 }
 
 #endif
