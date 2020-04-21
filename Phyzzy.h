@@ -118,7 +118,7 @@ public:
     void applySprings(void);
     void updateFrame(double, size_t);
 
-    Mass& operator [] (const int&);
+    const Mass& operator [] (const int&);
 };
 PhyzzyModel::~PhyzzyModel(void)
 {
@@ -227,8 +227,8 @@ void PhyzzyModel::updateFrame(double delta, size_t steps = 1)
         n->F.clr(); // Clear forces for next cycle.
     }
 }
-// Returns reference to mass.
-Mass& PhyzzyModel::operator [] (const int& i)
+// Returns reference to mass. Read only.
+const Mass& PhyzzyModel::operator [] (const int& i)
 {
     return nodes[i]->m;
 }
