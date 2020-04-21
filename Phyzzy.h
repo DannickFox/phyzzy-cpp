@@ -1,10 +1,4 @@
-/**
- * PhyzzyModel.h
- * PhyzzyModel 2D spring-mass system library.
- * Inspired by Sodaplay's Sodaconstructor.
- * It's like Soda but it isn't. It's Phyzzy, like Soda,
- * but that's about it.
-*/
+// Phyzzy.h
 
 #ifndef PHYZZY_H
 #define PHYZZY_H
@@ -110,7 +104,8 @@ public:
     int addEdge(int, int, Spring);
     int remNode(int);
     int remEdge(int);
-
+    int locate(Vect2D, double);
+    
     size_t totalNodes(void);
     size_t totalEdges(void);
     Vect2D centerCoord(void);
@@ -192,6 +187,18 @@ int PhyzzyModel::remEdge(int x)
         edges.erase(edges.begin() + x);
     }
     return edges.size();
+}
+int PhyzzyModel::locate(Vect2D pos, double radius)
+{
+    int i = 0;
+    
+    for (i = 0; i < nodes.size(); i++)
+    {
+        if ((pos - nodes[i]->m.pos).mag2() < (radius * radius))
+            break;
+    }
+
+    return i < nodes.size() ? i : -1;
 }
 size_t PhyzzyModel::totalNodes(void)
 {
