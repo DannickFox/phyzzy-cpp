@@ -118,7 +118,7 @@ public:
     void applySprings(void);
     void updateFrame(double, size_t);
 
-    Vect2D operator [] (const int&);
+    Mass& operator [] (const int&);
 };
 PhyzzyModel::~PhyzzyModel(void)
 {
@@ -227,9 +227,10 @@ void PhyzzyModel::updateFrame(double delta, size_t steps = 1)
         n->F.clr(); // Clear forces for next cycle.
     }
 }
-Vect2D PhyzzyModel::operator [] (const int& i)
+// Returns reference to mass.
+Mass& PhyzzyModel::operator [] (const int& i)
 {
-    return nodes[i]->m.pos;
+    return nodes[i]->m;
 }
 
 struct Boundary

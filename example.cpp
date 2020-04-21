@@ -50,7 +50,7 @@ int main(void)
         output << std::fixed << std::setprecision(3) << i * delta << ": ";
         for (int j = 0; j < phz.totalNodes(); j++)
         {
-            output << "m" << j << "(" << phz[j].x << ", " << phz[j].y << ") ";
+            output << "m" << j << "(" << phz[j].pos.x << ", " << phz[j].pos.y << ") ";
         }
         output << "\n";
 
